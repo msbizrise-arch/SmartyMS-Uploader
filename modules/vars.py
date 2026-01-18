@@ -1,6 +1,7 @@
 # SudoR2spr WOODcraft
 # Add your details here and then deploy by clicking on HEROKU Deploy button
 import os
+from os import environ
 
 API_ID    = os.environ.get("API_ID", "22518279")
 API_HASH  = os.environ.get("API_HASH", "61e5cc94bc5e6318643707054e54caf4")
