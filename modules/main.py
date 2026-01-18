@@ -34,12 +34,12 @@ bot = Client(
     bot_token=BOT_TOKEN
 )
 # Inline keyboard for start command
-BUTTONSCONTACT = InlineKeyboardMarkup([[InlineKeyboardButton(text="📞 Contact", url="https://t.me/inventor_king_09")]])
+BUTTONSCONTACT = InlineKeyboardMarkup([[InlineKeyboardButton(text="📞Contact", url="https://t.me/SmartBoy_ApnaMS")]])
 keyboard = InlineKeyboardMarkup(
     [
         [
-            InlineKeyboardButton(text="🛠️ Chanel", url="https://t.me/+RZDBATzxxTgxMDZl"),
-            InlineKeyboardButton(text="🛠️ help", url="https://t.me/inventor_king_09"),
+            InlineKeyboardButton(text="🛠️ Channel", url="https://t.me/NEET_Saathi"),
+            InlineKeyboardButton(text="🛠️ Help", url="https://t.me/Nawaab_Robot"),
         ],
     ]
 )
