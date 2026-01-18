@@ -33,6 +33,16 @@ bot = Client(
     api_hash=API_HASH,
     bot_token=BOT_TOKEN
 )
+# Inline keyboard for start command
+BUTTONSCONTACT = InlineKeyboardMarkup([[InlineKeyboardButton(text="📞 Contact", url="https://t.me/inventor_king_09")]])
+keyboard = InlineKeyboardMarkup(
+    [
+        [
+            InlineKeyboardButton(text="🛠️ Chanel", url="https://t.me/+RZDBATzxxTgxMDZl"),
+            InlineKeyboardButton(text="🛠️ help", url="https://t.me/inventor_king_09"),
+        ],
+    ]
+)
 
 my_name = "MS"
 
