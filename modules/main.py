@@ -115,7 +115,7 @@ async def main():
         
 class Data:
     START = (
-        "🌟 Welcome Dear😘💜 {0}! 🌟\n\n"
+        "🌟 Welcome Dear😘❤️ {0}! 🌟\n\n"
     )
 # Define the start command handler
 @bot.on_message(filters.command("start"))
