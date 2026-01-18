@@ -161,7 +161,6 @@ async def start(client: Client, msg: Message):
     await start_message.edit_text(
         Data.START.format(msg.from_user.mention) +
         "Checking status Okay... Command is Private Dear.🌚**Bot Made BY @SmartBoy_ApnaMS**🔍\n\n"
-        f"If you face any problem contact -  [@SmartBoy_ApnaMS](https://t.me/Nawaab_Robot)\n", disable_web_page_preview=True, reply_markup=BUTTONSCONTACT
         "Progress:[🟩🟩🟩🟩🟩🟩🟩🟩🟩] 100%\n\n"
     )
 
