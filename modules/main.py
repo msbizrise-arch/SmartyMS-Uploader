@@ -141,7 +141,7 @@ async def start(client: Client, msg: Message):
     await start_message.edit_text(
         Data.START.format(msg.from_user.mention) +
         "✅ Bot Ready! Command is Private Dear.🌚\n"
-        "**Bot Made BY @SmartBoy_ApnaMS** 🔍\n\n"
+        "**Bot Made BY @SmartBoy_ApnaMS** 🔍\n\n Chek Now Your Subscription /myplan OR For Help /help OR our total users /users is Live Now🤩."
         "Progress: [🟩🟩🟩🟩🟩🟩🟩🟩🟩] 100%\n\n",
         reply_markup=keyboard
     )
