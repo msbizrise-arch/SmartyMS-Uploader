@@ -4,6 +4,7 @@ import sys
 import json
 import time
 import asyncio
+import threading
 import requests
 import subprocess
 import urllib.parse
@@ -12,7 +13,7 @@ import cloudscraper
 import m3u8
 import core as helper
 from utils import progress_bar
-from vars import API_ID, API_HASH, BOT_TOKEN, OWNER, CREDIT, AUTH_USERS
+from vars import API_ID, API_HASH, BOT_TOKEN, OWNER, CREDIT, AUTH_USERS, WEBHOOK, PORT
 from aiohttp import ClientSession
 from pyromod import listen
 from subprocess import getstatusoutput
@@ -71,60 +72,36 @@ async def stop_bot():
     await bot.stop()
 
 async def main():
-    if WEBHOOK:
-        # Start the web server
-        app_runner = web.AppRunner(await web_server())
-        await app_runner.setup()
-        site = web.TCPSite(app_runner, "0.0.0.0", PORT)
-        await site.start()
-        print(f"Web server started on port {PORT}")
-
     # Start the bot
     await start_bot()
 
-    # Keep the program running
+    # Keep the program running until interrupted
     try:
-        while True:
-            await bot.polling()  # Run forever, or until interrupted
-    except (true):
-        await stop_bot()
-    
-
-async def start_bot():
-    await bot.start()
-    print("Bot is up and running")
-
-async def stop_bot():
-    await bot.stop()
-
-async def main():
-    if WEBHOOK:
-        # Start the web server
-        app_runner = web.AppRunner(await web_server())
-        await app_runner.setup()
-        site = web.TCPSite(app_runner, "0.0.0.0", PORT)
-        await site.start()
-        print(f"Web server started on port {PORT}")
-
-    # Start the bot
-    await start_bot()
-
-    # Keep the program running
-    try:
-        while True:
-            await asyncio.sleep(3600)  # Run forever, or until interrupted
-    except (true):
+        await asyncio.Event().wait()
+    except Exception:
         await stop_bot()
         
 class Data:
     START = (
         "🌟 Welcome Dear❤️ {0}! 🌟\n\n"
     )
+
+# Inline keyboards for start command
+keyboard = InlineKeyboardMarkup(
+    [
+        [
+            InlineKeyboardButton(text="🛠️ Channel", url="https://t.me/NEET_Saathi"),
+            InlineKeyboardButton(text="🛠️ Help", url="https://t.me/Nawaab_Robot"),
+        ],
+        [
+            InlineKeyboardButton(text="📞 Contact", url="https://t.me/SmartBoy_ApnaMS"),
+        ],
+    ]
+)
+
 # Define the start command handler
 @bot.on_message(filters.command("start"))
 async def start(client: Client, msg: Message):
-    user = await client.get_me()
-    mention = user.mention
     start_message = await client.send_message(
         msg.chat.id,
         Data.START.format(msg.from_user.mention)
@@ -143,7 +120,7 @@ async def start(client: Client, msg: Message):
         "Loading features... ⏳\n\n"
         "Progress: [🟥🟥🟥⬜⬜⬜⬜⬜⬜] 25%\n\n"
     )
-    
+
     await asyncio.sleep(1)
     await start_message.edit_text(
         Data.START.format(msg.from_user.mention) +
@@ -161,8 +138,10 @@ async def start(client: Client, msg: Message):
     await asyncio.sleep(1)
     await start_message.edit_text(
         Data.START.format(msg.from_user.mention) +
-        "Checking status Okay... Command is Private Dear.🌚**Bot Made BY @SmartBoy_ApnaMS**🔍\n\n"
-        "Progress:[🟩🟩🟩🟩🟩🟩🟩🟩🟩] 100%\n\n"
+        "✅ Bot Ready! Command is Private Dear.🌚\n"
+        "**Bot Made BY @SmartBoy_ApnaMS** 🔍\n\n"
+        "Progress: [🟩🟩🟩🟩🟩🟩🟩🟩🟩] 100%\n\n",
+        reply_markup=keyboard
     )
 
 @bot.on_message(filters.command(["stop"]) )
@@ -191,7 +170,7 @@ async def list_auth_users(client: Client, message: Message):
     if message.chat.id != OWNER:
         return await message.reply_text("You are not authorized to use this command🤡.")
     
-    user_list = '\n'.join(map(str, get_all_user_ids()))  # Get user IDs from MongoDB
+    user_list = '\n'.join(map(str, AUTH_USERS))
     await message.reply_text(f"Authorized Users:\n{user_list}")
 
 @bot.on_message(filters.command("rmauth") & filters.private)
@@ -681,11 +660,11 @@ async def txt_handler(bot: Client, m: Message):
 
 
 # ─── Flask keep-alive server for Render ───────────────────────────────────────
-flask_app = Flask(name)
+flask_app = Flask(__name__)
 
 @flask_app.route('/')
 def index():
-    return 'Bot is running!'
+    return 'Bot is running! @SmartBoy_ApnaMS'
 
 def run_flask():
     port = int(os.environ.get("PORT", 8000))
@@ -696,5 +675,3 @@ threading.Thread(target=run_flask, daemon=True).start()
 # ─────────────────────────────────────────
 
 bot.run()
-if __name__ == "__main__":
-    asyncio.run(main())
