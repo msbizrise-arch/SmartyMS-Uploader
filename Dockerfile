@@ -1,5 +1,5 @@
-#FROM python:3.9.7-slim-buster
-FROM python:3.13.0
+FROM python:3.11-slim
+
 RUN apt-get update -y && apt-get upgrade -y \
     && apt-get install -y --no-install-recommends gcc libffi-dev musl-dev ffmpeg aria2 python3-pip \
     && apt-get clean \
@@ -7,7 +7,10 @@ RUN apt-get update -y && apt-get upgrade -y \
 
 COPY . /app/
 WORKDIR /app/
-RUN pip install --upgrade pip -r Installer
-ENV COOKIES_FILE_PATH="/modules/youtube_cookies.txt"
 
-CMD gunicorn app:app & python3 modules/main.py
+RUN pip install --upgrade pip setuptools wheel
+RUN pip install -r Installer
+
+ENV COOKIES_FILE_PATH="/app/modules/youtube_cookies.txt"
+
+CMD ["python3", "modules/main.py"]

@@ -1,11 +1,9 @@
 services:
   - type: web
-    name: Text Leech Bot
+    name: SmartyMS-Uploader
     plan: free
     env: docker
     dockerfilePath: Dockerfile
-    repo: https://github.com/AshutoshGoswami24/text-leech-bot-for-render
-    branch: main
     autoDeploy: false
     envVars:
       - key: BOT_TOKEN
@@ -14,7 +12,9 @@ services:
         sync: false
       - key: API_HASH
         sync: false
-      - key: WEBHOOK
+      - key: OWNER
+        sync: false
+      - key: AUTH_USERS
         sync: false
       - key: PORT
-        value: 8000  # Default port value, update if needed
+        value: 8000
