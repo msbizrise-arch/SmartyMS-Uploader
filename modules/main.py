@@ -22,6 +22,7 @@ from aiohttp import web
 from pyrogram import Client, filters
 from pyrogram.types import Message
 from pyrogram.errors import FloodWait
+from flask import Flask
 from pyrogram.errors.exceptions.bad_request_400 import StickerEmojiInvalid
 from pyrogram.types.messages_and_media import message
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
@@ -679,6 +680,20 @@ async def txt_handler(bot: Client, m: Message):
     await m.reply_text("𝐀𝐋𝐋 𝐃𝐎𝐍𝐄 NOW TIMES FOR REACTIONS.✅🔸")
 
 
+# ─── Flask keep-alive server for Render ───────────────────────────────────────
+flask_app = Flask(name)
+
+@flask_app.route('/')
+def index():
+    return 'Bot is running!'
+
+def run_flask():
+    port = int(os.environ.get("PORT", 8000))
+    flask_app.run(host="0.0.0.0", port=port)
+
+# Start Flask in background thread so Render detects open port
+threading.Thread(target=run_flask, daemon=True).start()
+# ─────────────────────────────────────────
 
 bot.run()
 if __name__ == "__main__":
