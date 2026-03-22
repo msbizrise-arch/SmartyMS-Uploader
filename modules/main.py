@@ -14,6 +14,7 @@ import m3u8
 import core as helper
 from utils import progress_bar
 from vars import API_ID, API_HASH, BOT_TOKEN, OWNER, CREDIT, AUTH_USERS, WEBHOOK, PORT
+import database as db
 from aiohttp import ClientSession
 from pyromod import listen
 from subprocess import getstatusoutput
@@ -102,6 +103,7 @@ keyboard = InlineKeyboardMarkup(
 # Define the start command handler
 @bot.on_message(filters.command("start"))
 async def start(client: Client, msg: Message):
+    db.register_user(msg.from_user.id)
     start_message = await client.send_message(
         msg.chat.id,
         Data.START.format(msg.from_user.mention)
@@ -154,43 +156,269 @@ async def restart_handler(_, m):
 async def add_auth_user(client: Client, message: Message):
     if message.chat.id != OWNER:
         return await message.reply_text("You are not authorized to use this command🤡.")
-    
+
+    # Format: /addauth <user_id> <num> <unit> <nickname>
+    # Example: /addauth 123456789 01 week Mahira
     try:
-        new_user_id = int(message.command[1])
-        if new_user_id in AUTH_USERS:
-            await message.reply_text("User ID is already authorized🥳.")
-        else:
-            AUTH_USERS.append(new_user_id)
-            await message.reply_text(f"User ID {new_user_id} added to authorized users.")
+        cmd = message.command
+        if len(cmd) < 5:
+            return await message.reply_text(
+                "❌ Wrong format!\n\n"
+                "✅ Correct: `/addauth <user_id> <num> <unit> <nickname>`\n"
+                "📌 Example: `/addauth 123456789 01 week Mahira`\n\n"
+                "⏱ Units: `day` | `week` | `month` | `year`"
+            )
+        user_id = int(cmd[1])
+        duration_str = f"{cmd[2]} {cmd[3]}"   # e.g. "01 week"
+        nickname = cmd[4]
+
+        expires, err = db.add_auth_user(user_id, duration_str, nickname)
+        if err:
+            return await message.reply_text(f"❌ Error: {err}")
+
+        # Also add to in-memory AUTH_USERS if not present
+        if user_id not in AUTH_USERS:
+            AUTH_USERS.append(user_id)
+
+        await message.reply_text(
+            f"✅ **User Authorized Successfully!**\n\n"
+            f"👤 **User ID:** `{user_id}`\n"
+            f"🏷 **Nickname:** `{nickname}`\n"
+            f"⏱ **Duration:** `{cmd[2]} {cmd[3]}`\n"
+            f"📅 **Expires At:** `{expires.strftime('%Y-%m-%d %H:%M:%S')}`"
+        )
     except (IndexError, ValueError):
         await message.reply_text("Please provide a valid user ID🙄.")
 
-@bot.on_message(filters.command("users") & filters.private)
-async def list_auth_users(client: Client, message: Message):
-    if message.chat.id != OWNER:
-        return await message.reply_text("You are not authorized to use this command🤡.")
-    
-    user_list = '\n'.join(map(str, AUTH_USERS))
-    await message.reply_text(f"Authorized Users:\n{user_list}")
 
 @bot.on_message(filters.command("rmauth") & filters.private)
 async def remove_auth_user(client: Client, message: Message):
     if message.chat.id != OWNER:
         return await message.reply_text("You are not authorized to use this command🤡.")
-    
+
     try:
         user_id_to_remove = int(message.command[1])
-        if user_id_to_remove not in AUTH_USERS:
+        removed = db.remove_auth_user(user_id_to_remove)
+        if not removed:
             await message.reply_text("User ID is not in the authorized users list🤡.")
         else:
-            AUTH_USERS.remove(user_id_to_remove)
-            await message.reply_text(f"User ID {user_id_to_remove} removed from authorized users.")
+            if user_id_to_remove in AUTH_USERS:
+                AUTH_USERS.remove(user_id_to_remove)
+            await message.reply_text(f"✅ User ID `{user_id_to_remove}` removed from authorized users.")
     except (IndexError, ValueError):
         await message.reply_text("Please provide a valid user ID🙄.")
 
 
+@bot.on_message(filters.command("users"))
+async def list_auth_users(client: Client, message: Message):
+    db.register_user(message.from_user.id)
+    uid = message.from_user.id
+    auth_users_data = db.get_all_auth_users()
+    valid_count = len(db.get_auth_user_ids())
+
+    if uid == OWNER:
+        # ── OWNER view ────────────────────────────────────────────
+        lines = [
+            "👑 **Welcome Boss to check our Database!**\n",
+            f"🗄️ **Total Authorised Users:** `{valid_count}`\n",
+            "━━━━━━━━━━━━━━━━━━━━━━\n"
+        ]
+        if not auth_users_data:
+            lines.append("_No authorized users yet._")
+        else:
+            for i, (uid_str, info) in enumerate(auth_users_data.items(), 1):
+                nickname = info.get("nickname", "N/A")
+                granted = info.get("granted_at", "N/A")
+                expires = info.get("expires_at", "N/A")
+                lines.append(
+                    f"**{i}.** 👤 `{uid_str}`\n"
+                    f"   🏷 Nickname: `{nickname}`\n"
+                    f"   📅 Granted: `{granted}`\n"
+                    f"   ⏳ Expires: `{expires}`\n"
+                )
+        await message.reply_text("".join(lines))
+
+    else:
+        # ── Common header for all non-owners ──────────────────────
+        header = (
+            f"🗄️ **Welcome to our Database!**\n\n"
+            f"✨ **Total Authorised Users:** `{valid_count}`\n\n"
+            "━━━━━━━━━━━━━━━━━━━━━━"
+        )
+
+        if db.is_authorized(uid):
+            # ── Authorised user view ───────────────────────────────
+            shayari = (
+                "\n\n💫 _تیرا نام ہمارے دل میں ہے،_\n"
+                "_تو ہمارا خاص ہے ہمیشہ کے لیے۔_ 🌹"
+            )
+            footer = (
+                f"\n\n💚 **Don't worry, you are also in our authorized users!**\n"
+                f"📋 Tap on /myplan to know your plan details.\n"
+                f"⚠️ Facing any issue? Contact: @SmartBoy_ApnaMS"
+            )
+            await message.reply_text(header + shayari + footer)
+
+        else:
+            # ── Unauthorised user view ─────────────────────────────
+            footer = (
+                f"\n\n🌟 **Don't worry — you can also become a part of our Premium Family!**\n"
+                f"We'd love to have you on board. Join thousands of happy users today. 🚀\n\n"
+                f"📋 Check plans: /help\n"
+                f"💬 Contact: @SmartBoy_ApnaMS"
+            )
+            await message.reply_text(header + footer)
+
+
+@bot.on_message(filters.command("help"))
+async def help_handler(client: Client, message: Message):
+    db.register_user(message.from_user.id)
+    help_text = (
+        "╔══════════════════════════╗\n"
+        "║  🤖 **SmartyMS Uploader Bot**  ║\n"
+        "╚══════════════════════════╝\n\n"
+        "📋 **Commands:**\n"
+        "┣ /start — Start the Bot\n"
+        "┣ /darling — 📥 TXT Batch Downloader\n"
+        "┣ /myplan — 📊 Check Your Plan\n"
+        "┣ /users — 🗄️ Database Info\n"
+        "┗ /help — ❓ This Menu\n\n"
+        "━━━━━━━━━━━━━━━━━━━━━━\n"
+        "💎 **Subscription Plans**\n"
+        "━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        "🟢 **Basic Plan**\n"
+        "   ₹ 45 / Week\n\n"
+        "🥈 **Silver Plan**\n"
+        "   ₹ 200 / Month\n\n"
+        "🥇 **Gold Plan**\n"
+        "   ₹ 500 / 3 Months\n\n"
+        "💠 **Diamond Plan**\n"
+        "   ₹ 800 / 7 Months\n\n"
+        "⚡ **Pro Plan**\n"
+        "   ₹ 900 / Year\n\n"
+        "━━━━━━━━━━━━━━━━━━━━━━\n"
+        "🌟 **MS Special Subscription**\n"
+        "   🎁 For MS Friends — _First Time:_\n"
+        "   ✨ **15 Minutes FREE Trailer**\n"
+        "   🏷 **25% OFF** on Monthly & Yearly Plans\n"
+        "━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        "📊 Check your current plan: /myplan\n"
+        "💬 Know more? Talk to Admin: @SmartBoy_ApnaMS"
+    )
+    await message.reply_text(help_text)
+
+
+@bot.on_message(filters.command("myplan"))
+async def myplan_handler(client: Client, message: Message):
+    db.register_user(message.from_user.id)
+    uid = message.from_user.id
+    info = db.get_auth_user(uid)
+
+    if not info:
+        await message.reply_text(
+            "🚫 **Not Authorized!**\n\n"
+            "You don't have an active subscription yet.\n\n"
+            "📋 Check plans: /help\n"
+            "💬 Contact: @SmartBoy_ApnaMS"
+        )
+        return
+
+    from datetime import datetime
+    now = datetime.now()
+    try:
+        granted_dt = datetime.strptime(info["granted_at"], "%Y-%m-%d %H:%M:%S")
+        expires_dt = datetime.strptime(info["expires_at"], "%Y-%m-%d %H:%M:%S")
+    except Exception:
+        await message.reply_text("❌ Could not read your plan data. Contact @SmartBoy_ApnaMS")
+        return
+
+    if now >= expires_dt:
+        await message.reply_text(
+            "⏰ **Your Subscription Has Expired!**\n\n"
+            "📋 Renew via: /help\n"
+            "💬 Contact: @SmartBoy_ApnaMS"
+        )
+        return
+
+    # Time remaining
+    remaining = expires_dt - now
+    remaining_days = remaining.days
+    remaining_hours = remaining.seconds // 3600
+    remaining_mins = (remaining.seconds % 3600) // 60
+
+    nickname = info.get("nickname", "N/A")
+
+    await message.reply_text(
+        f"🙏 **Thank You for Being Our Premium Member!** 💖\n\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"📋 **Your Plan Details**\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"👤 **Name:** `{nickname}`\n"
+        f"🆔 **User ID:** `{uid}`\n\n"
+        f"📅 **Granted At:** `{granted_dt.strftime('%d %b %Y, %I:%M %p')}`\n"
+        f"⏳ **Expires At:** `{expires_dt.strftime('%d %b %Y, %I:%M %p')}`\n\n"
+        f"⏱ **Time Remaining:**\n"
+        f"   `{remaining_days}` Days & `{remaining_hours}` Hours & `{remaining_mins}` Minutes\n\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"📋 View plans: /help\n"
+        f"💬 Any issue? Contact: @SmartBoy_ApnaMS"
+    )
+
+
+@bot.on_message(filters.command("broadcast") & filters.private)
+async def broadcast_handler(client: Client, message: Message):
+    if message.from_user.id != OWNER:
+        return await message.reply_text("you are not my owner 😒.")
+
+    # Must be a reply to the content to broadcast
+    if not message.reply_to_message:
+        return await message.reply_text(
+            "📢 **Broadcast Mode**\n\n"
+            "please Boss reply with such a content for brodcasting."
+        )
+
+    content = message.reply_to_message
+    all_users = db.get_all_user_ids()
+
+    if not all_users:
+        return await message.reply_text("❌ No users in database yet.")
+
+    sent = 0
+    failed = 0
+    status_msg = await message.reply_text(f"📤 Broadcasting to `{len(all_users)}` users...")
+
+    for user_id in all_users:
+        try:
+            await content.copy(user_id)
+            sent += 1
+        except Exception:
+            failed += 1
+        await asyncio.sleep(0.05)  # small delay to avoid flood
+
+    await status_msg.edit_text(
+        f"✅ **Broadcast Complete!**\n\n"
+        f"📨 Sent: `{sent}`\n"
+        f"❌ Failed: `{failed}`\n"
+        f"👥 Total: `{len(all_users)}`"
+    )
+
+
+
+
 @bot.on_message(filters.command(["darling"]) )
 async def txt_handler(bot: Client, m: Message):
+    db.register_user(m.from_user.id)
+
+    # ── Auth Check ──────────────────────────────────────────────
+    if not db.is_authorized(m.from_user.id):
+        return await m.reply_text(
+            "🚫 **First Buy a Premium Subscription first Baby** 💎\n\n"
+            "📋 Check plans: /help\n"
+            "💬 Contact: @SmartBoy_ApnaMS"
+        )
+    await m.reply_text("✅ **Great You are My Favourite Costumer** 🌟")
+    # ────────────────────────────────────────────────────────────
+
     editable = await m.reply_text(f"**🔹Hi I am Poweful Lovely TXT Downloader📥 Bot.**\n🔹**Send me the TXT file and Just wait and Watch😚.**")
     input: Message = await bot.listen(editable.chat.id)
     x = await input.download()
