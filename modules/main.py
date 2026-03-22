@@ -39,12 +39,12 @@ bot = Client(
 
 
 # Inline keyboard for start command
-BUTTONSCONTACT = InlineKeyboardMarkup([[InlineKeyboardButton(text="📞Contact", url="https://t.me/SmartBoy_ApnaMS")]])
+BUTTONSCONTACT = InlineKeyboardMarkup([[InlineKeyboardButton(text="🔎Developer", url="https://t.me/SmartBoy_ApnaMS")]])
 keyboard = InlineKeyboardMarkup(
     [
         [
-            InlineKeyboardButton(text="🛠️ Channel", url="https://t.me/NEET_Saathi"),
-            InlineKeyboardButton(text="🛠️ Help", url="https://t.me/Nawaab_Robot"),
+            InlineKeyboardButton(text="🛠️ Channel", url="https://t.me/Toxic_Official_1"),
+            InlineKeyboardButton(text="👑 Owner", url="https://t.me/MR_Toxic_1"),
         ],
     ]
 )
@@ -84,18 +84,18 @@ async def main():
         
 class Data:
     START = (
-        "🌟 Welcome Dear❤️ {0}! 🌟\n\n"
+        "🌟 Welcome Dear🤝 {0}! 🌟\n\n"
     )
 
 # Inline keyboards for start command
 keyboard = InlineKeyboardMarkup(
     [
         [
-            InlineKeyboardButton(text="🛠️ Channel", url="https://t.me/NEET_Saathi"),
-            InlineKeyboardButton(text="🛠️ Help", url="https://t.me/Nawaab_Robot"),
+            InlineKeyboardButton(text="🛠️ Channel", url="https://t.me/Toxic_Official_1"),
+            InlineKeyboardButton(text="👑 Owner", url="https://t.me/MR_Toxic_1"),
         ],
         [
-            InlineKeyboardButton(text="📞 Contact", url="https://t.me/SmartBoy_ApnaMS"),
+            InlineKeyboardButton(text="🔎 Developer", url="https://t.me/SmartBoy_ApnaMS"),
         ],
     ]
 )
@@ -148,7 +148,7 @@ async def start(client: Client, msg: Message):
 
 @bot.on_message(filters.command(["stop"]) )
 async def restart_handler(_, m):
-    await m.reply_text("**STOPPED**🛑", True)
+    await m.reply_text("🛑**STOPPED**🛑", True)
     os.execl(sys.executable, sys.executable, *sys.argv)
 
 
@@ -287,15 +287,15 @@ async def help_handler(client: Client, message: Message):
         "💎 **Subscription Plans**\n"
         "━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "🟢 **Basic Plan**\n"
-        "   ₹ 45 / Week\n\n"
+        "   ₹ 45 Per Week\n\n"
         "🥈 **Silver Plan**\n"
-        "   ₹ 200 / Month\n\n"
+        "   ₹ 200 Per Month\n\n"
         "🥇 **Gold Plan**\n"
-        "   ₹ 500 / 3 Months\n\n"
+        "   ₹ 500 Per 3 Months\n\n"
         "💠 **Diamond Plan**\n"
-        "   ₹ 800 / 7 Months\n\n"
+        "   ₹ 800 Per 7 Months\n\n"
         "⚡ **Pro Plan**\n"
-        "   ₹ 900 / Year\n\n"
+        "   ₹ 900 Per Year\n\n"
         "━━━━━━━━━━━━━━━━━━━━━━\n"
         "🌟 **MS Special Subscription**\n"
         "   🎁 For MS Friends — _First Time:_\n"
