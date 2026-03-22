@@ -54,11 +54,13 @@ my_name = "MS"
 
 # ── Random image list (add/remove URLs freely) ────────────────────────────────
 image_list = [
-    "https://graph.org/file/548b8b73c35af202bfdac.png",
-    "https://telegra.ph/file/8305f01e0fe41c90ef38e.jpg",
-    "https://telegra.ph/file/f34278c8d874a879b84a8.jpg",
-    "https://telegra.ph/file/0e51b5e7d2039fc2b35a9.jpg",
-    "https://telegra.ph/file/9b5b6d1e3f52ab3c2ea3e.jpg",
+    "https://graph.org/file/a7defa3fc5af14e1ef64d-6aaf13e93fca95cfb2.jpg",
+    "https://graph.org/file/0477971c295c3ece935ef-2af948bd4f14c6d1da.jpg",
+    "https://graph.org/file/9664850ce3c6ebaa5007e-e812fa25118aa1a1d7.jpg",
+    "https://graph.org/file/b7466fa9700260aab4f77-a48f2b54d2f8328112.jpg",
+    "https://graph.org/file/2eb3c7ed975b9f9dffaa5-9b991b04b9478b1026.jpg",
+    "https://graph.org/file/e5cbc501850bf1c4351f6-2e913a534c92f5f5f8.jpg",
+    "https://graph.org/file/b48abf3696926fd6f36b3-9e1be53031a43a444d.jpg",
 ]
 # ─────────────────────────────────────────────────────────────────────────────
 
