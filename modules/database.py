@@ -1,31 +1,25 @@
 # ─── database.py ─── SmartyMS-Uploader ───────────────────────────────────────
 # Handles: auth users (with nickname + timing) & all users (for broadcast)
-# Storage: JSON file (persists on disk inside Docker container)
+# Storage: MongoDB (persistent across restarts)
 # ─────────────────────────────────────────────────────────────────────────────
 
-import json
 import os
 from datetime import datetime, timedelta
+from pymongo import MongoClient
 
-_DIR = os.path.dirname(__file__)
-AUTH_DB_FILE = os.path.join(_DIR, "MSauth_db.json")
-ALL_USERS_FILE = os.path.join(_DIR, "MSall_users.json")
+# ── MongoDB Connection ────────────────────────────────────────────────────────
 
+MONGO_URL = os.environ.get(
+    "MONGO_URL",
+    "mongodb+srv://m49606145_db_user:Th15V5nu9utMejwO@cluster0.g11tftt.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+)
 
-# ── Internal helpers ──────────────────────────────────────────────────────────
+_client = MongoClient(MONGO_URL)
+_db = _client["SmartyMS"]
 
-def _load(path):
-    if os.path.exists(path):
-        try:
-            with open(path, "r") as f:
-                return json.load(f)
-        except Exception:
-            pass
-    return {}
-
-def _save(path, data):
-    with open(path, "w") as f:
-        json.dump(data, f, indent=2)
+auth_col     = _db["auth_users"]
+users_col    = _db["all_users"]
+channels_col = _db["channels"]
 
 
 # ── Duration parser ───────────────────────────────────────────────────────────
@@ -70,38 +64,50 @@ def add_auth_user(user_id: int, duration_str: str, nickname: str):
             "Example: `/addauth 123456 01 week Mahira`"
         )
 
-    data = _load(AUTH_DB_FILE)
     now = datetime.now()
     expires = now + td
 
-    data[str(user_id)] = {
-        "nickname": nickname,
-        "granted_at": now.strftime("%Y-%m-%d %H:%M:%S"),
-        "expires_at": expires.strftime("%Y-%m-%d %H:%M:%S"),
-    }
-    _save(AUTH_DB_FILE, data)
+    auth_col.update_one(
+        {"user_id": user_id},
+        {"$set": {
+            "user_id": user_id,
+            "nickname": nickname,
+            "granted_at": now.strftime("%Y-%m-%d %H:%M:%S"),
+            "expires_at": expires.strftime("%Y-%m-%d %H:%M:%S"),
+        }},
+        upsert=True
+    )
     return expires, None
 
 
 def remove_auth_user(user_id: int):
     """Remove user from auth DB. Returns True if existed."""
-    data = _load(AUTH_DB_FILE)
-    key = str(user_id)
-    if key in data:
-        del data[key]
-        _save(AUTH_DB_FILE, data)
-        return True
-    return False
+    result = auth_col.delete_one({"user_id": user_id})
+    return result.deleted_count > 0
 
 
 def get_auth_user(user_id: int):
     """Returns user dict {nickname, granted_at, expires_at} or None."""
-    return _load(AUTH_DB_FILE).get(str(user_id))
+    doc = auth_col.find_one({"user_id": user_id}, {"_id": 0})
+    if doc:
+        return {
+            "nickname": doc.get("nickname"),
+            "granted_at": doc.get("granted_at"),
+            "expires_at": doc.get("expires_at"),
+        }
+    return None
 
 
 def get_all_auth_users():
-    """Returns full auth dict {user_id_str: {...}}."""
-    return _load(AUTH_DB_FILE)
+    """Returns full auth dict {user_id_str: {...}} — same shape as old JSON."""
+    result = {}
+    for doc in auth_col.find({}, {"_id": 0}):
+        result[str(doc["user_id"])] = {
+            "nickname": doc.get("nickname"),
+            "granted_at": doc.get("granted_at"),
+            "expires_at": doc.get("expires_at"),
+        }
+    return result
 
 
 def is_authorized(user_id: int):
@@ -118,14 +124,13 @@ def is_authorized(user_id: int):
 
 def get_auth_user_ids():
     """Returns list of currently valid (non-expired) user IDs."""
-    data = _load(AUTH_DB_FILE)
     now = datetime.now()
     valid = []
-    for uid_str, info in data.items():
+    for doc in auth_col.find({}, {"_id": 0, "user_id": 1, "expires_at": 1}):
         try:
-            expires = datetime.strptime(info["expires_at"], "%Y-%m-%d %H:%M:%S")
+            expires = datetime.strptime(doc["expires_at"], "%Y-%m-%d %H:%M:%S")
             if now < expires:
-                valid.append(int(uid_str))
+                valid.append(int(doc["user_id"]))
         except Exception:
             pass
     return valid
@@ -135,40 +140,37 @@ def get_auth_user_ids():
 
 def register_user(user_id: int):
     """Track every user who interacts with the bot (for broadcast)."""
-    data = _load(ALL_USERS_FILE)
-    data[str(user_id)] = True
-    _save(ALL_USERS_FILE, data)
+    users_col.update_one(
+        {"user_id": user_id},
+        {"$set": {"user_id": user_id}},
+        upsert=True
+    )
 
 
 def get_all_user_ids():
     """Returns list of all user IDs ever seen by the bot."""
-    return [int(k) for k in _load(ALL_USERS_FILE).keys()]
+    return [doc["user_id"] for doc in users_col.find({}, {"_id": 0, "user_id": 1})]
 
 
 # ── Allowed Channels / Groups ─────────────────────────────────────────────────
 
-CHANNELS_DB_FILE = os.path.join(_DIR, "MSchannels_db.json")
-
 def add_channel(chat_id: int):
     """Add a channel/group to the allowed list."""
-    data = _load(CHANNELS_DB_FILE)
-    data[str(chat_id)] = True
-    _save(CHANNELS_DB_FILE, data)
+    channels_col.update_one(
+        {"chat_id": chat_id},
+        {"$set": {"chat_id": chat_id}},
+        upsert=True
+    )
 
 def remove_channel(chat_id: int):
     """Remove a channel/group. Returns True if existed."""
-    data = _load(CHANNELS_DB_FILE)
-    key = str(chat_id)
-    if key in data:
-        del data[key]
-        _save(CHANNELS_DB_FILE, data)
-        return True
-    return False
+    result = channels_col.delete_one({"chat_id": chat_id})
+    return result.deleted_count > 0
 
 def is_allowed_chat(chat_id: int):
     """True if this chat_id is in the allowed channels list."""
-    return str(chat_id) in _load(CHANNELS_DB_FILE)
+    return channels_col.find_one({"chat_id": chat_id}) is not None
 
 def get_all_channels():
     """Returns list of allowed channel/group IDs."""
-    return [int(k) for k in _load(CHANNELS_DB_FILE).keys()]
+    return [doc["chat_id"] for doc in channels_col.find({}, {"_id": 0, "chat_id": 1})]
