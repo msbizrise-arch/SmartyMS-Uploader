@@ -139,43 +139,153 @@ async def start(client: Client, msg: Message):
     start_message = await client.send_message(
         msg.chat.id,
         Data.START.format(msg.from_user.mention)
+# Initialize the bot
+bot = Client(
+    "bot",
+    api_id=API_ID,
+    api_hash=API_HASH,
+    bot_token=BOT_TOKEN
+)
+
+
+# Inline keyboard for start command
+BUTTONSCONTACT = InlineKeyboardMarkup([[InlineKeyboardButton(text="🔎Developer", url="https://t.me/SmartBoy_ApnaMS")]])
+keyboard = InlineKeyboardMarkup(
+    [
+        [
+            InlineKeyboardButton(text="🛠️ Channel", url="https://t.me/Toxic_Official_1"),
+            InlineKeyboardButton(text="👑 Owner", url="https://t.me/MR_Toxic_1"),
+        ],
+    ]
+)
+
+my_name = "MS"
+
+# ── Random image list (add/remove URLs freely) ────────────────────────────────
+image_list = [
+    "https://graph.org/file/a7defa3fc5af14e1ef64d-6aaf13e93fca95cfb2.jpg",
+    "https://graph.org/file/0477971c295c3ece935ef-2af948bd4f14c6d1da.jpg",
+    "https://graph.org/file/9664850ce3c6ebaa5007e-e812fa25118aa1a1d7.jpg",
+    "https://graph.org/file/b7466fa9700260aab4f77-a48f2b54d2f8328112.jpg",
+    "https://graph.org/file/2eb3c7ed975b9f9dffaa5-9b991b04b9478b1026.jpg",
+    "https://graph.org/file/e5cbc501850bf1c4351f6-2e913a534c92f5f5f8.jpg",
+    "https://graph.org/file/b48abf3696926fd6f36b3-9e1be53031a43a444d.jpg",
+]
+# ─────────────────────────────────────────────────────────────────────────────
+
+cookies_file_path = os.getenv("COOKIES_FILE_PATH", "/modules/youtube_cookies.txt")
+
+# Define aiohttp routes
+routes = web.RouteTableDef()
+
+@routes.get("/", allow_head=True)
+async def root_route_handler(request):
+    return web.json_response("https://text-leech-bot-for-render.onrender.com/")
+
+async def web_server():
+    web_app = web.Application(client_max_size=30000000)
+    web_app.add_routes(routes)
+    return web_app
+
+async def start_bot():
+    await bot.start()
+    print("Bot is up and running")
+
+async def stop_bot():
+    await bot.stop()
+
+async def main():
+    # Start the bot
+    await start_bot()
+
+    # Keep the program running until interrupted
+    try:
+        await asyncio.Event().wait()
+    except Exception:
+        await stop_bot()
+        
+class Data:
+    START = (
+        "🌟 Welcome Dear🤝 {0}! 🌟\n\n"
+    )
+
+# Inline keyboards for start command
+keyboard = InlineKeyboardMarkup(
+    [
+        [
+            InlineKeyboardButton(text="🛠️ Channel", url="https://t.me/Toxic_Official_1"),
+            InlineKeyboardButton(text="👑 Owner", url="https://t.me/MR_Toxic_1"),
+        ],
+        [
+            InlineKeyboardButton(text="🔎 Developer", url="https://t.me/SmartBoy_ApnaMS"),
+        ],
+    ]
+)
+
+
+# ── Credit name href parser ────────────────────────────────────────────────────
+# Supports: "Text|https://url" → "[Text](https://url)" (Telegram markdown link)
+# Normal text with no "|" passes through unchanged.
+def parse_credit(raw: str) -> str:
+    if "|" in raw:
+        parts = raw.split("|", 1)
+        text = parts[0].strip()
+        url  = parts[1].strip()
+        return f"[{text}]({url})"
+    return raw
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Define the start command handler
+@bot.on_message(filters.command("start"))
+async def start(client: Client, msg: Message):
+    db.register_user(msg.from_user.id)
+    start_message = await client.send_message(
+        msg.chat.id,
+        Data.START.format(msg.from_user.mention)
     )
 
     await asyncio.sleep(1)
     await start_message.edit_text(
         Data.START.format(msg.from_user.mention) +
-        "Initializing Uploader bot...😚🤖\n\n"
+        "Initializing Uploader bot... 🤖\n\n"
         "Progress: [⬜⬜⬜⬜⬜⬜⬜⬜⬜] 0%\n\n"
     )
 
     await asyncio.sleep(1)
     await start_message.edit_text(
         Data.START.format(msg.from_user.mention) +
-        "Loading features...😗⏳\n\n"
+        "Loading features... ⏳\n\n"
         "Progress: [🟥🟥🟥⬜⬜⬜⬜⬜⬜] 25%\n\n"
     )
-    
+
     await asyncio.sleep(1)
     await start_message.edit_text(
         Data.START.format(msg.from_user.mention) +
-        "This may take a moment, sit back and relax!🫣💪\n\n"
+        "This may take a moment, sit back and relax! 🥵\n\n"
         "Progress: [🟧🟧🟧🟧🟧⬜⬜⬜⬜] 50%\n\n"
     )
 
     await asyncio.sleep(1)
     await start_message.edit_text(
         Data.START.format(msg.from_user.mention) +
-        "Checking Bot Status...😙🔍\n\n"
+        "Checking Bot Status... 🔍\n\n"
         "Progress: [🟨🟨🟨🟨🟨🟨🟨⬜⬜] 75%\n\n"
     )
 
     await asyncio.sleep(1)
-    await start_message.edit_text(
-        Data.START.format(msg.from_user.mention) +
-        "Checking status Okay... Command is Private Dear🫂.**Bot Made BY @SmartBoy_ApnaMS**🔍\n\n"
-        "Progress:[🟩🟩🟩🟩🟩🟩🟩🟩🟩] 100%\n\n"
+    await start_message.delete()
+    await client.send_photo(
+        msg.chat.id,
+        photo=random.choice(image_list),
+        caption=(
+            Data.START.format(msg.from_user.mention) +
+            "✅ Bot Ready! Command is Private Dear.🌚\n"
+            "**Bot Made BY @SmartBoy_ApnaMS** 🔍\n\n Chek Now Your Subscription /myplan OR For Help /help OR our total users /users is Live Now🤩."
+            "Progress: [🟩🟩🟩🟩🟩🟩🟩🟩🟩] 100%\n\n"
+        ),
+        reply_markup=keyboard
     )
-
+        
 @bot.on_message(filters.command(["stop"]) )
 async def restart_handler(_, m):
     await m.reply_text("**STOPPED**🛑", True)
