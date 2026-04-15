@@ -34,7 +34,31 @@ bot = Client(
     bot_token=BOT_TOKEN
 )
 
+
+# Inline keyboard for start command
+BUTTONSCONTACT = InlineKeyboardMarkup([[InlineKeyboardButton(text="🔎Developer", url="https://t.me/SmartBoy_ApnaMS")]])
+keyboard = InlineKeyboardMarkup(
+    [
+        [
+            InlineKeyboardButton(text="🛠️ Channel", url="https://t.me/Toxic_Official_1"),
+            InlineKeyboardButton(text="👑 Owner", url="https://t.me/MR_Toxic_1"),
+        ],
+    ]
+)
+
 my_name = "MS"
+
+# ── Random image list (add/remove URLs freely) ────────────────────────────────
+image_list = [
+    "https://graph.org/file/a7defa3fc5af14e1ef64d-6aaf13e93fca95cfb2.jpg",
+    "https://graph.org/file/0477971c295c3ece935ef-2af948bd4f14c6d1da.jpg",
+    "https://graph.org/file/9664850ce3c6ebaa5007e-e812fa25118aa1a1d7.jpg",
+    "https://graph.org/file/b7466fa9700260aab4f77-a48f2b54d2f8328112.jpg",
+    "https://graph.org/file/2eb3c7ed975b9f9dffaa5-9b991b04b9478b1026.jpg",
+    "https://graph.org/file/e5cbc501850bf1c4351f6-2e913a534c92f5f5f8.jpg",
+    "https://graph.org/file/b48abf3696926fd6f36b3-9e1be53031a43a444d.jpg",
+]
+# ──────────────────────────────────────────────────────────────
 
 cookies_file_path = os.getenv("COOKIES_FILE_PATH", "/modules/youtube_cookies.txt")
 
